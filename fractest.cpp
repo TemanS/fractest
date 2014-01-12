@@ -76,8 +76,8 @@
 #include <QMessageBox>
 #include <QVBoxLayout>
 
-#include "qpgui.h"
-#include "mathpack.h"
+#include <qpgui.h>
+#include <mathpack.h>
 #include "fractest.h"
 
 using namespace ft;
