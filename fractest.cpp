@@ -78,7 +78,7 @@
 
 #include <qpgui.h>
 #include <mathpack.h>
-#include "fractest.h"
+#include <fractest.h>
 
 using namespace ft;
 
