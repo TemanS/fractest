@@ -78,6 +78,7 @@
 
 #include <qpgui.h>
 #include <mathpack.h>
+#include <randomop.h>
 #include <fractest.h>
 
 using namespace ft;
@@ -421,6 +422,16 @@ void FracTest::runTest()
     if(ptm->getPass() == 0) {
         resultFileManager->startTest(ptm);
         problemList[ft_answer]->setInputMask(inputMasks[ptm->getIndex()]);
+
+        // Since this is the start aof a new test sequence, initialize
+        // the min/max parameeters in the RandOp class. These are used
+        // to avoid things like too many "one" and "zero" operands and
+        // too many sequences of identical left/right operand pairs.
+        //
+        rnd->clear();
+        int index = ptm->getCurrentTestIndex();
+        QVector<int> opLimits = ptm->getOperandLimits(index, oplim_end);
+        rnd->setMinMax(1, opLimits[max_lt], 1, opLimits[max_rt]);
     }
 
     // At this point, the TestParmManager pointer, "ptm" is pointing to the
@@ -434,6 +445,14 @@ void FracTest::runTest()
     }
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// doLcm - Least Common Multiple test
+//
+// Does not have max/min for Right Operand (Rop), because there is no
+// operand, but rather there are terms presented for which the Least
+// Common Multiple must be determined by the user.
+//
 void FracTest::doLcm()
 {
     TestParmManager* ptm = testParmManager;
@@ -443,18 +462,32 @@ void FracTest::doLcm()
     QVector<int> Lops;
     QVector<int> opLims = ptm->getOperandLimits(offset, oplim_end);
 
-    int maxLop = opLims[max_lt];
-    int maxtrm = opLims[max_term];
-    int mintrm = opLims[min_term];
+    int maxLop = opLims[max_lt];    // Maximum value of a multiple
+    int maxtrm = opLims[max_term];  // Maximum number of multiples
+    int mintrm = opLims[min_term];  // Minimum number of multiples
     int terms = mintrm;
 
+    // Terms is the number of terms in a problem. For LCM, if there
+    // are three terms, the problem would ask for the Least Common
+    // multiple of the three terms, a,b,c. E.g, the Least Common
+    // multiple of 3,4,5 would be 60 (3*4*5).
+    // The minimum number of terms for a Least Common Multiple is 2,
+    // since you need at least 2 numbers to determine their Least
+    // Common Multiple.
+    //
+    // If the test allows more than the minimum number of multiples,
+    // then randomize the number of multiples that can be presented.
+    //
     if(maxtrm > mintrm)
         terms = rnd->getOne(mintrm, maxtrm);
 
     problem.clear();
 
+    // Get the multiples into a QVector to be passed to LeastComMult::
+    // getLeastCommonMultiple().
+    //
     for(int i = 0; i < terms; ++i) {
-        Lops << rnd->getOne(1, maxLop);
+        Lops << rnd->getOneUnique(1, maxLop);
         problem += QString("%1, ").arg(Lops[i]);
     }
 
@@ -464,6 +497,10 @@ void FracTest::doLcm()
     showProblem(problem);
 }
 
+//////////////////////////////////////////////////////////////////////////
+//
+// doReduce - Reduce fractions
+//
 void FracTest::doReduce()
 {
     TestParmManager* ptm = testParmManager;
@@ -472,11 +509,15 @@ void FracTest::doReduce()
     QVector<int> opLims = ptm->getOperandLimits(offset, oplim_end);
     const int numIdx = 0;
     const int denIdx = 1;
+    QPoint pair;
 
-    ops << rnd->getOne(opLims[min_num], opLims[max_num]);   // Numerator
-    ops << rnd->getOne(opLims[min_den], opLims[max_den]);   // Denominator
+    rnd->getPair(pair);
+    ops << pair.rx() << pair.ry();
 
-    // If the numerator is smaller than the denominator, then be certain
+    //ops << rnd->getOneUnique(opLims[min_num], opLims[max_num]); // Numerator
+    //ops << rnd->getOneUnique(opLims[min_den], opLims[max_den]); // Denominator
+
+    // If the numerator is smaller than the denominator, then make sure
     // that they have a common factor so the fraction can be reduced.
     //
     Factors fac(ops[numIdx], ops[denIdx]);
@@ -600,8 +641,10 @@ int FracTest::openDefaults(QpFile& inFile, QTextStream& stream, bool builtin)
     //
     //  Test Selection, number of problems, and time allowed
     //
-    //                                 Number of
-    //                         Test    Problems
+    //  The number 2 sent to a checkbox sets it to checked.
+    //
+    //                         Test    Number of
+    //                        Checked  Problems
     //  Least Common Multiple    2         10          10
     //  Reduce to LCM            2         10          15
     //  Combine Terms            2         10          25
@@ -688,23 +731,25 @@ void FracTest::getMaxops()
     //
     //         Level    1       2       3
     //
-    //  LCM     Lop     6      10      10
-    //          Rop
+    //  LCM     Lop    16      24      32
+    //          Rop     0       0       0
     //      minTerms    2       2       2
     //      maxTerms    2       3       3
-    //  Reduce  Lop    20      50     100
-    //          Rop    20      50     100
-    //      minTerms
-    //      maxTerms
-    //  Combine Lop    20      50     100
-    //          Rop    20      50     100
+    //
+    //  Reduce  Lop     8      16      32
+    //          Rop     8      16      32
+    //      minTerms    2       2       2
+    //      maxTerms    2       2       2
+    //
+    //  Combine Lop    16      32      64
+    //          Rop    16      32      64
     //      minTerms    2       2       2
     //      maxTerms    2       3       4
     //
     QString qsMaxops = QString(
-        " 10   0  2  2  10   0  2  3  16   0  2  3 \n"
-        "  6   6  2  2  10  10  2  2  20  20  2  2 \n"
-        " 20  20  2  2  50  50  2  3 100 100  2  4 \n"
+        " 16   0  2  2  24   0  2  3  32   0  2  3 \n"
+        "  8   8  2  2  16  16  2  2  32  32  2  2 \n"
+        " 16  16  2  2  32  32  2  3  64  64  2  4 \n"
         );
 
     int status;
