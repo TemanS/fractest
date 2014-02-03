@@ -28,6 +28,7 @@
 
 #include <QDialog>
 #include <QCheckBox>
+#include <QPushButton>
 #include "ftnamespace.h"
 
 QT_BEGIN_NAMESPACE
