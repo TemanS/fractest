@@ -79,6 +79,7 @@
 #include <qpgui.h>
 #include <mathpack.h>
 #include <randomop.h>
+#include <randmanager.h>
 #include <fractest.h>
 
 using namespace ft;
@@ -187,13 +188,14 @@ void FracTest::createNameGroup()
     connect(pbGroup, SIGNAL(buttonClicked(int)), this, SLOT(onPBclicked(int)));
 
     QStringList pbStrings;
-    pbStrings << "Start" << "Stop";
+    pbStrings << "Start" << "Stop" << "Set Defaults";
 
     for(int i = 0; i < ft_pb_end; ++i) {
         pbList << new QPushButton(pbStrings[i]);
         pbList[i]->setAutoDefault(false);
         pbList[i]->setDefault(false);
-        layout->addWidget(pbList[i], 1, i+1);
+        pbList[i]->setFixedSize(100,24);
+        layout->addWidget(pbList[i], 1, i, Qt::AlignRight);
         pbGroup->addButton(pbList[i], i);
     }
 
@@ -428,7 +430,7 @@ void FracTest::runTest()
         // to avoid things like too many "one" and "zero" operands and
         // too many sequences of identical left/right operand pairs.
         //
-        rnd->clear();
+        //RandManager rnd;
         int index = ptm->getCurrentTestIndex();
         QVector<int> opLimits = ptm->getOperandLimits(index, oplim_end);
         rnd->setMinMax(1, opLimits[max_lt], 1, opLimits[max_rt]);
@@ -724,6 +726,7 @@ void FracTest::setDefaults(QTextStream& in)
 
 void FracTest::getMaxops()
 {
+#if 0
     // The following are the default maxima for left and right operands
     // for the respective arithmetic operations and grade levels.
     //
@@ -750,6 +753,65 @@ void FracTest::getMaxops()
         " 16   0  2  2  24   0  2  3  32   0  2  3 \n"
         "  8   8  2  2  16  16  2  2  32  32  2  2 \n"
         " 16  16  2  2  32  32  2  3  64  64  2  4 \n"
+        );
+#endif
+    // The following are the default max and min values for the operands
+    // for the respective arithmetic operations and grade levels, as well
+    // as the maximum and minimum number of terms for each problem.
+    //
+    // The maximum number of terms is first, so we know how many of the
+    // next numbers in the stream belong to each problem.
+    //
+    //  Max Operand Values for the given grade levels.
+    //
+    //         Level    1       2       3
+    //  LCM
+    //      maxTerms    2       3       3
+    //      minTerms    2       2       2
+    //
+    //      op1 max    16      24      32
+    //          min     0       0       0
+    //
+    //      op2 max    16      24      32
+    //          min     0       0       0
+    //
+    //      op3 max   n/a      16      24
+    //          min   n/a       0       0
+    //
+    //  Reduce
+    //      maxTerms    2       2       2
+    //      minTerms    2       2       2
+    //
+    //      op1 max     8      16      32
+    //          min     0       0       0
+    //
+    //      op2 max     8      16      32
+    //          min     0       0       0
+    //
+    //  Combine
+    //      maxTerms    4       6       6
+    //      minTerms    4       4       6
+    //
+    //      op1 max     8      16      32
+    //          min     0       0       0
+    //
+    //      op2 max     8      16      32
+    //          min     0       0       0
+    //
+    int IM = INT_MIN;
+    QString qsMaxops = QString(
+        // Level 1
+        "  2  2 16  0 16  0 \n"             // LCM
+        "  2  2  8  0  8  0 \n"             // Reduce
+        "  4  4  8  0  8  0  8  0  8  0 \n" // Combine
+        // Level 2
+        "  3  2 24  0 24  0 16  0 \n"                   // LCM
+        "  2  2 16  0 16  0 \n"                         // Reduce
+        "  6  4 16  0 16  0 16  0 16  0 16  0 16  0 \n" // Combine
+        // Level 3
+        "  3  2 32  0 32  0 24  0 \n"                   // LCM
+        "  2  2 32  0 32  0 \n"                         // Reduce
+        "  6  6 32  0 32  0 32  0 32  0 32  0 32  0 \n" // Combine
         );
 
     int status;
