@@ -11,7 +11,7 @@ namespace ft
 
     enum ft_tests {ft_lcm, ft_reduce, ft_combine, ft_tests_end};
     enum ft_level {ft_lvl_1, ft_lvl_2, ft_lvl_3, ft_lvl_end };
-    enum ft_pb {ft_start, ft_stop, ft_pb_end};
+    enum ft_pb {ft_start, ft_stop, ft_defaults, ft_pb_end};
     enum ft_prob {ft_pnum, ft_problem, ft_answer, ft_prob_end};
     enum oplim {
         max_lt, max_num = max_lt,
