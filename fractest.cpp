@@ -800,18 +800,18 @@ void FracTest::getMaxops()
     //
     int IM = INT_MIN;
     QString qsMaxops = QString(
-        // Level 1
-        "  2  2 16  0 16  0 \n"             // LCM
-        "  2  2  8  0  8  0 \n"             // Reduce
-        "  4  4  8  0  8  0  8  0  8  0 \n" // Combine
-        // Level 2
-        "  3  2 24  0 24  0 16  0 \n"                   // LCM
-        "  2  2 16  0 16  0 \n"                         // Reduce
-        "  6  4 16  0 16  0 16  0 16  0 16  0 16  0 \n" // Combine
-        // Level 3
-        "  3  2 32  0 32  0 24  0 \n"                   // LCM
-        "  2  2 32  0 32  0 \n"                         // Reduce
-        "  6  6 32  0 32  0 32  0 32  0 32  0 32  0 \n" // Combine
+        // LCM (Lowest Common Multiple
+        "  2  2 16  0 16  0 \n"             // Level 1
+        "  3  2 24  0 24  0 16  0 \n"       // Level 2
+        "  3  2 32  0 32  0 24  0 \n"       // Level 3
+        // Reduce terms
+        "  2  2  8  0  8  0 \n"             // Level 1
+        "  2  2 16  0 16  0 \n"             // Level 2
+        "  2  2 32  0 32  0 \n"             // Level 3
+        // Combine terms
+        "  4  4  8  0  8  0  8  0  8  0 \n"             // Level 1
+        "  6  4 16  0 16  0 16  0 16  0 16  0 16  0 \n" // Level 2
+        "  6  6 32  0 32  0 32  0 32  0 32  0 32  0 \n" // Level 3
         );
 
     int status;
@@ -820,6 +820,11 @@ void FracTest::getMaxops()
     QpFile maxopsFile(msgHandler);
     QString maxopsFileName = "ft-maxops.txt";
     TestParmManager* ptm = testParmManager;
+
+    // Get the test parameter list that was created when the
+    // TestParmManager was instantiated.
+    //
+    QList<TestParm*> pTestParmList = ptm->getTestParmList();
 
     QFlags<QIODevice::OpenModeFlag>
         flags = QIODevice::ReadWrite | QIODevice::Text;
@@ -830,11 +835,43 @@ void FracTest::getMaxops()
         inStream.setString(&qsMaxops);
     }
 
+    // If the file did not previously exist, then it has just been created
+    // and has no data. So take the data from the default string.
+    //
     if(status == qpfile::fCreated)
        inStream << qsMaxops;
 
     inStream.seek(0);
 
+    // Get the Operand Limits
+    //
+    buff.clear();
+    QVector<int> opLims;
+
+    // For each test ...
+    //
+    for(int j = 0; j < ft_tests_end; ++j) {
+        opLims.clear();
+
+        // For each level
+        //
+        for(int k = 0; k < ft_lvl_end; ++k) {
+
+            // Get the max number of terms, which is the first item
+            //
+            inStream >> buff;
+            opLims << buff.toInt();
+            inStream >> buff;           // MaxRop
+            opLims << buff.toInt();
+            inStream >> buff;           // MinTerm
+            opLims << buff.toInt();
+            inStream >> buff;           // MaxTerm
+            opLims << buff.toInt();
+        }
+        ptm->initOperandLimits(opLims, j);
+    }
+
+#if 0
     // Get the Operand Limits
     //
     buff.clear();
@@ -853,7 +890,7 @@ void FracTest::getMaxops()
         }
         ptm->initOperandLimits(opLims, j);
     }
-
+#endif
     if(maxopsFile.exists())
         maxopsFile.close();
 }
