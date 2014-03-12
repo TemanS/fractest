@@ -108,7 +108,7 @@ FracTest::FracTest(QPoint origin)//, QWidget *parent)
     mainLayout->addWidget(nameGroupBox);
 
     msgHandler = new Msg(messageArea);
-    testParmManager = new TestParmManager(ft_tests_end);
+    testParmManager = new TestParmManager(ft_tests_end, ft_lvl_end);
     resultFileManager = new ResultFileManager;
     rnd = new RandOp;
     getDefaults();
@@ -819,21 +819,21 @@ void FracTest::getMaxops()
     QTextStream inStream;
     QpFile maxopsFile(msgHandler);
     QString maxopsFileName = "ft-maxops.txt";
-    TestParmManager* ptm = testParmManager;
 
-    // Get the test parameter list that was created when the
-    // TestParmManager was instantiated.
+    // Get the pointer to the TestParmManager and a reference to the parameter
+    // list of TestParm classes that was created when the TestParmManager was
+    // instantiated.
     //
-    QList<TestParm*> pTestParmList = ptm->getTestParmList();
+    TestParmManager* ptm = testParmManager;
+    QList<TestParm*>& tpList = ptm->getTestParmList();
 
     QFlags<QIODevice::OpenModeFlag>
         flags = QIODevice::ReadWrite | QIODevice::Text;
 
     if((status = maxopsFile.get(maxopsFileName, flags, true)) != qpfile::fFailed)
         inStream.setDevice(&maxopsFile);
-    else {
+    else
         inStream.setString(&qsMaxops);
-    }
 
     // If the file did not previously exist, then it has just been created
     // and has no data. So take the data from the default string.
@@ -851,13 +851,21 @@ void FracTest::getMaxops()
     // For each test ...
     //
     for(int j = 0; j < ft_tests_end; ++j) {
+
+        // Get the maxterms and minterms for this problem set
+        //
+        inStream >> buff;
+        tpList[j]->maxterms = buff.toInt();
+
         opLims.clear();
+
 
         // For each level
         //
         for(int k = 0; k < ft_lvl_end; ++k) {
 
-            // Get the max number of terms, which is the first item
+            // Get the max number of terms, which is the first item in the
+            // stream.
             //
             inStream >> buff;
             opLims << buff.toInt();
