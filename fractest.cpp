@@ -84,6 +84,12 @@
 
 using namespace ft;
 
+/*********************************************************************
+ * FracTest(QPoint origin) - constructor
+ *
+ * Create an instance of the factest class at the origin defined by
+ * the QPoint.
+ */
 FracTest::FracTest(QPoint origin)//, QWidget *parent)
 //    : QDialog(parent)
 {
@@ -114,10 +120,19 @@ FracTest::FracTest(QPoint origin)//, QWidget *parent)
     getDefaults();
 }
 
+
+/*********************************************************************
+ * FracTest deconstructor
+ *
+ */
 FracTest::~FracTest()
 {
 }
 
+/*********************************************************************
+ * createMenu - create the menu bar and the options droplist.
+ *
+ */
 void FracTest::createMenu()
 {
     menuBar = new QMenuBar;
@@ -133,7 +148,10 @@ void FracTest::createMenu()
     connect(exitAction,   SIGNAL(triggered()), this, SLOT(ftExit()));
 }
 
-void FracTest::createTestGroup()
+/*********************************************************************
+ *
+ */
+ void FracTest::createTestGroup()
 {
     int wid = 200;
     testGroupBox = new QGroupBox;
@@ -173,6 +191,9 @@ void FracTest::createTestGroup()
     levelList[ft_lvl_1]->setChecked(true);
 }
 
+ /*********************************************************************
+  *
+  */
 void FracTest::createNameGroup()
 {
     const int wid = 140;
@@ -226,6 +247,9 @@ void FracTest::createNameGroup()
     nameGroupBox->setLayout(layout);
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::ftExit()
 {
     QMessageBox mbox;
@@ -240,6 +264,9 @@ void FracTest::ftExit()
     }
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::ftSave()
 {
     QMessageBox mbox;
@@ -247,6 +274,9 @@ void FracTest::ftSave()
     mbox.exec();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::ftSaveAs()
 {
     QMessageBox mbox;
@@ -254,6 +284,9 @@ void FracTest::ftSaveAs()
     mbox.exec();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::onNameBox()
 {
     if((nameBox->text() != userName) && (nameBox->text() != "")) {
@@ -262,6 +295,9 @@ void FracTest::onNameBox()
     }
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::onPBclicked(int index)
 {
     switch(index) {
@@ -273,6 +309,9 @@ void FracTest::onPBclicked(int index)
     }
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::onAnswer()
 {
     TestParmManager* ptm = testParmManager;
@@ -303,6 +342,9 @@ void FracTest::onAnswer()
     runTest();
 }
 
+/*********************************************************************
+ *
+ */
 QString FracTest::doLcmAnswer()
 {
     TestParmManager* ptm = testParmManager;
@@ -318,6 +360,9 @@ QString FracTest::doLcmAnswer()
     return text;
 }
 
+/*********************************************************************
+ *
+ */
 QString FracTest::doReduceAnswer()
 {
     TestParmManager* ptm = testParmManager;
@@ -338,6 +383,9 @@ QString FracTest::doReduceAnswer()
     return text;
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::startTest()
 {
     if(testParmManager->isRunning()) {
@@ -376,6 +424,9 @@ void FracTest::startTest()
     runTest();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::stopTest()
 {
     testParmManager->stopTest();
@@ -384,6 +435,9 @@ void FracTest::stopTest()
         problemList[i]->clear();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::runTest()
 {
     TestParmManager *ptm = testParmManager;
@@ -545,12 +599,18 @@ void FracTest::doReduce()
     showProblem(problem);
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::doCombine()
 {
     msgHandler->sendNotify("\"Combine Terms\" test not available yet.");
     stopTest();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::showProblem(const QString& problem)
 {
     TestParmManager* ptm = testParmManager;
@@ -564,6 +624,9 @@ void FracTest::showProblem(const QString& problem)
     ptm->startTimer();
 }
 
+/*********************************************************************
+ *
+ */
 QVector<int> FracTest::extractNumbers(const QString& string)
 {
     QTextStream stream;
@@ -585,6 +648,9 @@ QVector<int> FracTest::extractNumbers(const QString& string)
     return numbers;
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::genScore()
 {
     TestParmManager* ptm = testParmManager;
@@ -604,6 +670,9 @@ void FracTest::genScore()
     }
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::openResultFile()
 {
     QDateTime dt = QDateTime::currentDateTime();
@@ -625,6 +694,9 @@ void FracTest::openResultFile()
         resultFileManager->startFile(temp, dtStr);
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::setEditable(bool state)
 {
     for(int i = 0; i < ft_tests_end; ++i)
@@ -636,6 +708,10 @@ void FracTest::setEditable(bool state)
     quanEditList[ft_answer]->setEnabled(true);
     quanEditList[ft_answer]->setReadOnly(false);
 }
+
+/*********************************************************************
+ *
+ */
 int FracTest::openDefaults(QpFile& inFile, QTextStream& stream, bool builtin)
 {
     // Default Test Parameters
@@ -688,6 +764,9 @@ int FracTest::openDefaults(QpFile& inFile, QTextStream& stream, bool builtin)
     return status;
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::getDefaults()
 {
     QTextStream in;
@@ -699,6 +778,9 @@ void FracTest::getDefaults()
         file.close();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::setDefaults(QTextStream& in)
 {
     QString buff;
@@ -724,37 +806,11 @@ void FracTest::setDefaults(QTextStream& in)
         nameBox->setText(buff);
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::getMaxops()
 {
-#if 0
-    // The following are the default maxima for left and right operands
-    // for the respective arithmetic operations and grade levels.
-    //
-    //  Max Operand Values for the given grade levels
-    //
-    //         Level    1       2       3
-    //
-    //  LCM     Lop    16      24      32
-    //          Rop     0       0       0
-    //      minTerms    2       2       2
-    //      maxTerms    2       3       3
-    //
-    //  Reduce  Lop     8      16      32
-    //          Rop     8      16      32
-    //      minTerms    2       2       2
-    //      maxTerms    2       2       2
-    //
-    //  Combine Lop    16      32      64
-    //          Rop    16      32      64
-    //      minTerms    2       2       2
-    //      maxTerms    2       3       4
-    //
-    QString qsMaxops = QString(
-        " 16   0  2  2  24   0  2  3  32   0  2  3 \n"
-        "  8   8  2  2  16  16  2  2  32  32  2  2 \n"
-        " 16  16  2  2  32  32  2  3  64  64  2  4 \n"
-        );
-#endif
     // The following are the default max and min values for the operands
     // for the respective arithmetic operations and grade levels, as well
     // as the maximum and minimum number of terms for each problem.
@@ -798,7 +854,6 @@ void FracTest::getMaxops()
     //      op2 max     8      16      32
     //          min     0       0       0
     //
-    int IM = INT_MIN;
     QString qsMaxops = QString(
         // LCM (Lowest Common Multiple
         "  2  2 16  0 16  0 \n"             // Level 1
@@ -825,7 +880,7 @@ void FracTest::getMaxops()
     // instantiated.
     //
     TestParmManager* ptm = testParmManager;
-    QList<TestParm*>& tpList = ptm->getTestParmList();
+    QList<TestParm*> tpList = ptm->getTestParmList();
 
     QFlags<QIODevice::OpenModeFlag>
         flags = QIODevice::ReadWrite | QIODevice::Text;
@@ -846,63 +901,42 @@ void FracTest::getMaxops()
     // Get the Operand Limits
     //
     buff.clear();
-    QVector<int> opLims;
 
     // For each test ...
     //
     for(int j = 0; j < ft_tests_end; ++j) {
 
-        // Get the maxterms and minterms for this problem set
-        //
-        inStream >> buff;
-        tpList[j]->maxterms = buff.toInt();
-
-        opLims.clear();
-
-
         // For each level
         //
         for(int k = 0; k < ft_lvl_end; ++k) {
 
-            // Get the max number of terms, which is the first item in the
-            // stream.
+            // Get the maxterms and minterms for this problem set
+            // The maxterms also tells us how many maxval/minval pairs follow.
             //
             inStream >> buff;
-            opLims << buff.toInt();
-            inStream >> buff;           // MaxRop
-            opLims << buff.toInt();
-            inStream >> buff;           // MinTerm
-            opLims << buff.toInt();
-            inStream >> buff;           // MaxTerm
-            opLims << buff.toInt();
+            tpList[j]->maxterms = buff.toInt();
+            inStream >> buff;
+            tpList[j]->minterms = buff.toInt();
+
+            // Get the max/min operand values for this level of this test
+            //
+            for(int m = 0; m < tpList[j]->maxterms; ++m) {
+                inStream >> buff;
+                tpList[j]->maxops << buff.toInt();
+                inStream >> buff;
+                tpList[j]->minops << buff.toInt();
+            }
         }
-        ptm->initOperandLimits(opLims, j);
+        //ptm->initOperandLimits(opLims, j);
     }
 
-#if 0
-    // Get the Operand Limits
-    //
-    buff.clear();
-    QVector<int> opLims;
-    for(int j = 0; j < ft_tests_end; ++j) {
-        opLims.clear();
-        for(int k = 0; k < ft_lvl_end; ++k) {
-            inStream >> buff;           // MaxLop
-            opLims << buff.toInt();
-            inStream >> buff;           // MaxRop
-            opLims << buff.toInt();
-            inStream >> buff;           // MinTerm
-            opLims << buff.toInt();
-            inStream >> buff;           // MaxTerm
-            opLims << buff.toInt();
-        }
-        ptm->initOperandLimits(opLims, j);
-    }
-#endif
     if(maxopsFile.exists())
         maxopsFile.close();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::buffToInt(QTextStream& str, QList<int>& list)
 {
     QString buff;
@@ -921,17 +955,26 @@ void FracTest::buffToInt(QTextStream& str, QList<int>& list)
         list.removeLast();
 }
 
+/*********************************************************************
+ *
+ */
 int FracTest::getProblemCount()
 {
     return testParmManager->getTotalCount();
 }
 
 
+/*********************************************************************
+ *
+ */
 QString FracTest::getFinalScore()
 {
     return testParmManager->getFinalScore();
 }
 
+/*********************************************************************
+ *
+ */
 void FracTest::setUserName(const QString& name)
 {
     nameBox->setText(name);
