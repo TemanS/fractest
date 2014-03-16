@@ -509,14 +509,14 @@ void FracTest::doLcm()
 
     QString problem;
     LeastComMult lcm;
-    QVector<int> col = randman.getValues(col);
+    RandOp rnd;
     QVector<int> ops;
     int terms;
 
-    // The last term is not an operand, but the actual number of terms
+    // Get a "column" of random numbers for the operands.
     //
-    int maxterms = ptm->getMaxTerms() - 1;
-    int minterms = ptm->getMinTerms() - 1;
+    randman.setNoZero(true);
+    randman.getValues(ops);
 
     // Terms is the number of terms in a problem. For LCM, if there
     // are three terms, the problem would ask for the Least Common
@@ -529,18 +529,15 @@ void FracTest::doLcm()
     // If the test allows more than the minimum number of multiples,
     // then randomize the number of multiples that can be presented.
     //
-    if(maxterms > minterms)
-        terms = col[maxterms];
-
-    problem.clear();
-
-    // Get the operands from the column of values obtained from the
-    // call to RandomManager instance randman.
+    int maxterms = ptm->getMaxTerms();
+    int minterms = ptm->getMinTerms();
+    terms = (maxterms > minterms) ? rnd.getOne(minterms, maxterms)
+                                  : minterms;
+    // Create the problem string.
     //
-    for(int i = 0; i < terms; ++i) {
-        ops << col[i];
+    problem.clear();
+    for(int i = 0; i < terms; ++i)
         problem += QString("%1, ").arg(ops[i]);
-    }
 
     int theAnswer = lcm.getLeastCommonMultiple(ops);
     ptm->setCorrectAnswer(QString("%1").arg(theAnswer));
@@ -557,7 +554,9 @@ void FracTest::doReduce()
 {
     TestParmManager* ptm = testParmManager;
     RandManager randman = ptm->getRandman();
-    QVector<int> ops = randman.getValues(ops);
+    QVector<int> ops;
+
+    randman.getValues(ops);
 
     // If the numerator is smaller than the denominator, then make sure
     // that they have a common factor so the fraction can be reduced.
@@ -845,9 +844,9 @@ void FracTest::getMaxops()
     //
     QString qsMaxops = QString(
         // LCM (Lowest Common Multiple
-        "  3  3 16  0 16  0  2  2 \n"           // Level 1
-        "  4  3 24  0 24  0 16  0  3  2 \n"     // Level 2
-        "  4  3 32  0 32  0 24  0  3  2 \n"     // Level 3
+        "  2  2 10  0 10  0 \n"           // Level 1
+        "  3  2 10  0 10  0 10  0 \n"     // Level 2
+        "  3  2 16  0 10  0 10  0 \n"     // Level 3
         // Reduce terms
         "  3  3  8  0  8  0 10  2 \n"           // Level 1
         "  3  3 16  0 16  0 10  2 \n"           // Level 2
