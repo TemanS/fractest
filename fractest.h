@@ -86,16 +86,17 @@ private:
     void getDefaults();
     void setDefaults(QTextStream& in);
     int  openDefaults(QpFile& inFile, QTextStream& stream, bool builtin=false);
+    int  getTestParmIndex(int test, int level){return((test * level) + level);}
     void getMaxops();
     void setEditable(bool state);
-    void buffToInt(QTextStream &str, QList<int>& list);
+    void buffToInt(QTextStream &str, QVector<int>& list);
     void runTest();
     void genScore();
     void doLcm();
     void doReduce();
     void doCombine();
     void showProblem(const QString& problem);
-    QVector<int> extractNumbers(const QString& string);
+    QVector<int>& extractNumbers(const QString& string);
     QString doLcmAnswer();
     QString doReduceAnswer();
 
@@ -109,13 +110,13 @@ private:
     QAction* saveAsAction;
     QAction* exitAction;
 
-    QLineEdit* nameBox;
-    QTextEdit* messageArea;
-    QList<QCheckBox*> testChkBoxList;
-    QList<QLineEdit*> quanEditList;
-    QList<QRadioButton*> levelList;
-    QList<QPushButton*> pbList;
-    QList<QLineEdit*> problemList;
+    QLineEdit* nameBox;                 // username
+    QTextEdit* messageArea;             // Messagess to the user
+    QList<QCheckBox*> testChkBoxList;   // which tests are checked
+    QList<QLineEdit*> quanEditList;     // test count editboxes
+    QList<QRadioButton*> levelList;     // level of difficulty
+    QList<QPushButton*> pbList;         // the pushbutton group
+    QList<QLineEdit*> problemList;      // problem editboxes
 
     QGroupBox* testGroupBox;
     QGroupBox* nameGroupBox;

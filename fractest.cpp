@@ -80,6 +80,8 @@
 #include <mathpack.h>
 #include <randomop.h>
 #include <randmanager.h>
+#include <testparm.h>
+#include <testparmmanager.h>
 #include <fractest.h>
 
 using namespace ft;
@@ -114,7 +116,7 @@ FracTest::FracTest(QPoint origin)//, QWidget *parent)
     mainLayout->addWidget(nameGroupBox);
 
     msgHandler = new Msg(messageArea);
-    testParmManager = new TestParmManager(ft_tests_end, ft_lvl_end);
+    testParmManager = new TestParmManager(ft_tests_end);
     resultFileManager = new ResultFileManager;
     rnd = new RandOp;
     getDefaults();
@@ -384,6 +386,7 @@ QString FracTest::doReduceAnswer()
 }
 
 /*********************************************************************
+ * startTest - Begin the testing
  *
  */
 void FracTest::startTest()
@@ -400,11 +403,11 @@ void FracTest::startTest()
     testParmManager->initTotalCorrect();
     for(int i = 0; i < ft_tests_end; ++i) {
         testParmManager->initTest(
-             i,                                 // <- the index
-             quanEditList[i]->text().toInt(),
+             i,                                 // index into the test params
+             quanEditList[i]->text().toInt(),   // number of problems
              -1,                                // no timeout
-             levelGroup->checkedId(),
-             testChkBoxList[i]->isChecked() ? true : false,
+             levelGroup->checkedId(),           // level of difficulty
+             testChkBoxList[i]->isChecked() ? true : false, // enabled?
              inputMasks[i],
              testNames[i]);
     }
@@ -478,26 +481,16 @@ void FracTest::runTest()
     if(ptm->getPass() == 0) {
         resultFileManager->startTest(ptm);
         problemList[ft_answer]->setInputMask(inputMasks[ptm->getIndex()]);
-
-        // Since this is the start aof a new test sequence, initialize
-        // the min/max parameeters in the RandOp class. These are used
-        // to avoid things like too many "one" and "zero" operands and
-        // too many sequences of identical left/right operand pairs.
-        //
-        //RandManager rnd;
-        int index = ptm->getCurrentTestIndex();
-        QVector<int> opLimits = ptm->getOperandLimits(index, oplim_end);
-        rnd->setMinMax(1, opLimits[max_lt], 1, opLimits[max_rt]);
     }
 
     // At this point, the TestParmManager pointer, "ptm" is pointing to the
     // test parameters for the most current sequence of tests.
     //
     switch(ptm->getIndex()) {
-    case ft_lcm: doLcm(); break;
-    case ft_reduce: doReduce(); break;
-    case ft_combine: doCombine(); break;
-    default: break;
+        case ft_lcm: doLcm(); break;
+        case ft_reduce: doReduce(); break;
+        case ft_combine: doCombine(); break;
+        default: break;
     }
 }
 
@@ -512,16 +505,18 @@ void FracTest::runTest()
 void FracTest::doLcm()
 {
     TestParmManager* ptm = testParmManager;
-    int offset = ptm->getCurrentLevel() * oplim_end;
+    RandManager randman = ptm->getRandman();
+
     QString problem;
     LeastComMult lcm;
-    QVector<int> Lops;
-    QVector<int> opLims = ptm->getOperandLimits(offset, oplim_end);
+    QVector<int> col = randman.getValues(col);
+    QVector<int> ops;
+    int terms;
 
-    int maxLop = opLims[max_lt];    // Maximum value of a multiple
-    int maxtrm = opLims[max_term];  // Maximum number of multiples
-    int mintrm = opLims[min_term];  // Minimum number of multiples
-    int terms = mintrm;
+    // The last term is not an operand, but the actual number of terms
+    //
+    int maxterms = ptm->getMaxTerms() - 1;
+    int minterms = ptm->getMinTerms() - 1;
 
     // Terms is the number of terms in a problem. For LCM, if there
     // are three terms, the problem would ask for the Least Common
@@ -534,20 +529,20 @@ void FracTest::doLcm()
     // If the test allows more than the minimum number of multiples,
     // then randomize the number of multiples that can be presented.
     //
-    if(maxtrm > mintrm)
-        terms = rnd->getOne(mintrm, maxtrm);
+    if(maxterms > minterms)
+        terms = col[maxterms];
 
     problem.clear();
 
-    // Get the multiples into a QVector to be passed to LeastComMult::
-    // getLeastCommonMultiple().
+    // Get the operands from the column of values obtained from the
+    // call to RandomManager instance randman.
     //
     for(int i = 0; i < terms; ++i) {
-        Lops << rnd->getOneUnique(1, maxLop);
-        problem += QString("%1, ").arg(Lops[i]);
+        ops << col[i];
+        problem += QString("%1, ").arg(ops[i]);
     }
 
-    int theAnswer = lcm.getLeastCommonMultiple(Lops);
+    int theAnswer = lcm.getLeastCommonMultiple(ops);
     ptm->setCorrectAnswer(QString("%1").arg(theAnswer));
     problem.resize(problem.size()-2);
     showProblem(problem);
@@ -557,33 +552,23 @@ void FracTest::doLcm()
 //
 // doReduce - Reduce fractions
 //
+enum {numIdx, denIdx, mulIdx};
 void FracTest::doReduce()
 {
     TestParmManager* ptm = testParmManager;
-    int offset = ptm->getCurrentLevel() * oplim_end;
-    QVector<int> ops;
-    QVector<int> opLims = ptm->getOperandLimits(offset, oplim_end);
-    const int numIdx = 0;
-    const int denIdx = 1;
-    QPoint pair;
-
-    rnd->getPair(pair);
-    ops << pair.rx() << pair.ry();
-
-    //ops << rnd->getOneUnique(opLims[min_num], opLims[max_num]); // Numerator
-    //ops << rnd->getOneUnique(opLims[min_den], opLims[max_den]); // Denominator
+    RandManager randman = ptm->getRandman();
+    QVector<int> ops = randman.getValues(ops);
 
     // If the numerator is smaller than the denominator, then make sure
     // that they have a common factor so the fraction can be reduced.
     //
     Factors fac(ops[numIdx], ops[denIdx]);
     if((ops[numIdx] < ops[denIdx]) && ! fac.existCommonFactors()) {
-        int mult = rnd->getOne(2, 10);
-        ops[numIdx] *= mult;
-        ops[denIdx] *= mult;
+        ops[numIdx] *= ops[mulIdx];
+        ops[denIdx] *= ops[mulIdx];
     }
 
-    QVector<int> temp = fac.getCommonFactors(ops[numIdx], ops[denIdx]);
+    fac.getCommonFactors(ops[numIdx], ops[denIdx]);
     int num = ops[numIdx] / fac.getGreatestComFactor();
     int den = ops[denIdx] / fac.getGreatestComFactor();
 
@@ -625,14 +610,18 @@ void FracTest::showProblem(const QString& problem)
 }
 
 /*********************************************************************
+ * extractNumbers - extracts numbers from a string and returns them
+ *                  as a QVector
+ *
+ * Contains a static QVector, because it must persist across calls.
  *
  */
-QVector<int> FracTest::extractNumbers(const QString& string)
+QVector<int>& FracTest::extractNumbers(const QString& string)
 {
     QTextStream stream;
     QString buf;
     QString temp = string;
-    static QVector<int> numbers;
+    static QVector<int> numbers;    // Must persist across calls
     int num;
     bool ok;
 
@@ -856,13 +845,13 @@ void FracTest::getMaxops()
     //
     QString qsMaxops = QString(
         // LCM (Lowest Common Multiple
-        "  2  2 16  0 16  0 \n"             // Level 1
-        "  3  2 24  0 24  0 16  0 \n"       // Level 2
-        "  3  2 32  0 32  0 24  0 \n"       // Level 3
+        "  3  3 16  0 16  0  2  2 \n"           // Level 1
+        "  4  3 24  0 24  0 16  0  3  2 \n"     // Level 2
+        "  4  3 32  0 32  0 24  0  3  2 \n"     // Level 3
         // Reduce terms
-        "  2  2  8  0  8  0 \n"             // Level 1
-        "  2  2 16  0 16  0 \n"             // Level 2
-        "  2  2 32  0 32  0 \n"             // Level 3
+        "  3  3  8  0  8  0 10  2 \n"           // Level 1
+        "  3  3 16  0 16  0 10  2 \n"           // Level 2
+        "  3  3 32  0 32  0 10  2 \n"           // Level 3
         // Combine terms
         "  4  4  8  0  8  0  8  0  8  0 \n"             // Level 1
         "  6  4 16  0 16  0 16  0 16  0 16  0 16  0 \n" // Level 2
@@ -894,7 +883,7 @@ void FracTest::getMaxops()
     // and has no data. So take the data from the default string.
     //
     if(status == qpfile::fCreated)
-       inStream << qsMaxops;
+        inStream << qsMaxops;
 
     inStream.seek(0);
 
@@ -903,31 +892,35 @@ void FracTest::getMaxops()
     buff.clear();
 
     // For each test ...
+    // The operand limits are stored by levels for each test.
     //
     for(int j = 0; j < ft_tests_end; ++j) {
 
-        // For each level
+        // The vectors of int vectors must be resized to their
+        // outermost dimenstion, first.
+        //
+        tpList[j]->maxvals.resize(ft_lvl_end);
+        tpList[j]->minvals.resize(ft_lvl_end);
+
+        // Get the maxterms and minterms for this particluar test.
+        // The maxterms also tells us how many maxval/minval pairs follow.
         //
         for(int k = 0; k < ft_lvl_end; ++k) {
 
-            // Get the maxterms and minterms for this problem set
-            // The maxterms also tells us how many maxval/minval pairs follow.
-            //
             inStream >> buff;
-            tpList[j]->maxterms = buff.toInt();
+            tpList[j]->maxterms << buff.toInt();
             inStream >> buff;
-            tpList[j]->minterms = buff.toInt();
+            tpList[j]->minterms << buff.toInt();
 
             // Get the max/min operand values for this level of this test
             //
-            for(int m = 0; m < tpList[j]->maxterms; ++m) {
+            for(int m = 0; m < tpList[j]->maxterms[k]; ++m) {
                 inStream >> buff;
-                tpList[j]->maxops << buff.toInt();
+                tpList[j]->maxvals[k] << buff.toInt();
                 inStream >> buff;
-                tpList[j]->minops << buff.toInt();
+                tpList[j]->minvals[k] << buff.toInt();
             }
         }
-        //ptm->initOperandLimits(opLims, j);
     }
 
     if(maxopsFile.exists())
@@ -937,7 +930,7 @@ void FracTest::getMaxops()
 /*********************************************************************
  *
  */
-void FracTest::buffToInt(QTextStream& str, QList<int>& list)
+void FracTest::buffToInt(QTextStream& str, QVector<int>& list)
 {
     QString buff;
 
