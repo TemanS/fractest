@@ -549,7 +549,7 @@ void FracTest::doLcm()
 //
 // doReduce - Reduce fractions
 //
-enum {numIdx, denIdx, mulIdx};
+enum {numIdx, denIdx};
 void FracTest::doReduce()
 {
     TestParmManager* ptm = testParmManager;
@@ -563,8 +563,8 @@ void FracTest::doReduce()
     //
     Factors fac(ops[numIdx], ops[denIdx]);
     if((ops[numIdx] < ops[denIdx]) && ! fac.existCommonFactors()) {
-        ops[numIdx] *= ops[mulIdx];
-        ops[denIdx] *= ops[mulIdx];
+        ops[numIdx] *= 2;
+        ops[denIdx] *= 2;
     }
 
     fac.getCommonFactors(ops[numIdx], ops[denIdx]);
@@ -584,11 +584,43 @@ void FracTest::doReduce()
 }
 
 /*********************************************************************
+ * doCombine - combine terms
+ *
+ * This problem can have several forms.
+ *
+ *    Addition      Subtraction
+ *   j/k + m/n       j/k - m/n
+ * h j/k + i m/n   h j/k - i m/n
+ *
+ * The maximum and minimum operand values are stored as follows.
+ *
+ * ops[0] - Left denominator
+ * ops[1] - Left numerator
+ * ops[2] - Right denominator
+ * ops[3] - Right numerator
+ * ops[4] - Left coefficient - These will only be present in problems having
+ * ops[5] - Right coefficient  more than four terms
  *
  */
+enum {Lden, Lnum, Rden, Rnum, Lcoe, Rcoe};
 void FracTest::doCombine()
 {
     msgHandler->sendNotify("\"Combine Terms\" test not available yet.");
+    TestParmManager* ptm = testParmManager;
+    RandManager randman = ptm->getRandman();
+    QVector<int> ops;
+    QString answer;
+    RandOp rnd;
+
+    randman.setNoZero(true);
+    randman.getValues(ops);
+
+    int maxterms = ptm->getMaxTerms();
+    int minterms = ptm->getMinTerms();
+    int terms = (maxterms > minterms) ? rnd.getOne(minterms, maxterms)
+                                      : minterms;
+
+
     stopTest();
 }
 
@@ -823,14 +855,17 @@ void FracTest::getMaxops()
     //          min   n/a       0       0
     //
     //  Reduce
-    //      maxTerms    2       2       2
+    //      maxTerms    2       3       3
     //      minTerms    2       2       2
     //
-    //      op1 max     8      16      32
+    //      op1 max    10      10      32
     //          min     0       0       0
     //
-    //      op2 max     8      16      32
+    //      op2 max    10      10      32
     //          min     0       0       0
+    //
+    //      op3 max    10      10      10   <- multiplier
+    //      op3 min     2       2       2   <- multiplier
     //
     //  Combine
     //      maxTerms    4       6       6
@@ -846,15 +881,15 @@ void FracTest::getMaxops()
         // LCM (Lowest Common Multiple
         "  2  2 10  0 10  0 \n"           // Level 1
         "  3  2 10  0 10  0 10  0 \n"     // Level 2
-        "  3  2 16  0 10  0 10  0 \n"     // Level 3
+        "  3  2 10  0 10  0 16  0 \n"     // Level 3
         // Reduce terms
-        "  3  3  8  0  8  0 10  2 \n"           // Level 1
-        "  3  3 16  0 16  0 10  2 \n"           // Level 2
-        "  3  3 32  0 32  0 10  2 \n"           // Level 3
+        "  2  2 10  1 10  1 \n"           // Level 1
+        "  2  2 16  1 16  1 \n"           // Level 2
+        "  2  2 32  1 32  1 \n"           // Level 3
         // Combine terms
-        "  4  4  8  0  8  0  8  0  8  0 \n"             // Level 1
-        "  6  4 16  0 16  0 16  0 16  0 16  0 16  0 \n" // Level 2
-        "  6  6 32  0 32  0 32  0 32  0 32  0 32  0 \n" // Level 3
+        "  4  4  8  0 10  0  8  0 10  0 \n"             // Level 1
+        "  6  4 10  0 10  0 10  0 10  0  8  0  8  0 \n" // Level 2
+        "  6  6 10  0 16  0 10  0 16  0 10  0 10  0 \n" // Level 3
         );
 
     int status;
