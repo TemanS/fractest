@@ -96,6 +96,8 @@ private:
     void doReduce();
     void doCombine();
     void showProblem(const QString& problem);
+    bool checkNumDen(int& num, int& den);
+
     QVector<int>& extractNumbers(const QString& string);
     QString doLcmAnswer();
     QString doReduceAnswer();

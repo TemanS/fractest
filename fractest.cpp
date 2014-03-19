@@ -583,6 +583,26 @@ void FracTest::doReduce()
     showProblem(problem);
 }
 
+/********************************************************************
+ * checkNumDen - be sure the numerator is less than the denominator.
+ *
+ * returns true if numerator is less than denominator.
+ *
+ * If the numerator is greater than the denominator, then the terms
+ * are swapped and the funtion returns false.
+ */
+bool FracTest::checkNumDen(int& num, int& den)
+{
+    int tmp;
+    if(num > den){
+        tmp = num;
+        num = den;
+        den = tmp;
+        return false;
+    }
+    return true;
+}
+
 /*********************************************************************
  * doCombine - combine terms
  *
@@ -610,22 +630,51 @@ void FracTest::doCombine()
     msgHandler->sendNotify("\"Combine Terms\" test not available yet.");
     TestParmManager* ptm = testParmManager;
     RandManager randman = ptm->getRandman();
+    Factors fac;
+    LeastComMult lcm;
+
     QVector<int> ops;
     QString problem;
     QString answer;
     RandOp rnd;
+    int num;
+    int den;
 
     randman.setNoZero(true);
     randman.getValues(ops);
 
+    // Make the numerator less than the denominator
+    //
+    checkNumDen(ops[Lnum], ops[Lden]);
+    checkNumDen(ops[Rnum], ops[Rden]);
+
+    // Get the numerator and denominator of the correct answer
+    //
+    den = ops[Lden] * ops[Rden];
+    num = ((den / ops[Lden]) * ops[Lnum])
+        + ((den / ops[Rden]) * ops[Rnum]);
+
+    fac.getCommonFactors(num, den);
+    num /= fac.getGreatestComFactor();
+    den /= fac.getGreatestComFactor();
+
+    // Get the min/max allowable number of operands, and if max allowable
+    // operands is greater than min allowable, then randomize between the
+    // max/min limits to determine the number of operands for this problem.
+    //
     int maxterms = ptm->getMaxTerms();
     int minterms = ptm->getMinTerms();
     int terms = (maxterms > minterms) ? rnd.getOne(minterms, maxterms)
                                       : minterms;
+
+    // Create the problem string and the answer string based on the number
+    // of operands (terms).
+    //
     switch (terms) {
     case 4:
         problem = QString("%1/%2 + %3/%4")
                 .arg(ops[Lnum]).arg(ops[Lden]).arg(ops[Rnum]).arg(ops[Rden]);
+
         break;
 
     case 5:
@@ -636,13 +685,15 @@ void FracTest::doCombine()
 
     case 6:
         problem = QString("%5 %1/%2 + %6 %3/%4")
-        .arg(ops[Lnum]).arg(ops[Lden]).arg(ops[Rnum]).arg(ops[Rden])
+                .arg(ops[Lnum]).arg(ops[Lden]).arg(ops[Rnum]).arg(ops[Rden])
                 .arg(ops[Lcoe]).arg(ops[Rcoe]);
         break;
 
     default:
         break;
     }
+
+    ptm->setCorrectAnswer(answer);
     showProblem(problem);
 }
 
