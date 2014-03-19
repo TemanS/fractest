@@ -586,10 +586,12 @@ void FracTest::doReduce()
 /*********************************************************************
  * doCombine - combine terms
  *
- * This problem can have several forms.
+ * This problem can have several forms, with 4, 5, or 6 operands
  *
  *    Addition      Subtraction
  *   j/k + m/n       j/k - m/n
+ * h j/k + m/n     h j/k - m/n
+ *   j/k + i m/n    j/k - i m/n
  * h j/k + i m/n   h j/k - i m/n
  *
  * The maximum and minimum operand values are stored as follows.
@@ -602,13 +604,14 @@ void FracTest::doReduce()
  * ops[5] - Right coefficient  more than four terms
  *
  */
-enum {Lden, Lnum, Rden, Rnum, Lcoe, Rcoe};
+enum {Lnum, Lden, Rnum, Rden, Lcoe, Rcoe};
 void FracTest::doCombine()
 {
     msgHandler->sendNotify("\"Combine Terms\" test not available yet.");
     TestParmManager* ptm = testParmManager;
     RandManager randman = ptm->getRandman();
     QVector<int> ops;
+    QString problem;
     QString answer;
     RandOp rnd;
 
@@ -619,9 +622,28 @@ void FracTest::doCombine()
     int minterms = ptm->getMinTerms();
     int terms = (maxterms > minterms) ? rnd.getOne(minterms, maxterms)
                                       : minterms;
+    switch (terms) {
+    case 4:
+        problem = QString("%1/%2 + %3/%4")
+                .arg(ops[Lnum]).arg(ops[Lden]).arg(ops[Rnum]).arg(ops[Rden]);
+        break;
 
+    case 5:
+        problem = QString("%5 %1/%2 + %3/%4")
+                .arg(ops[Lnum]).arg(ops[Lden]).arg(ops[Rnum]).arg(ops[Rden])
+                .arg(ops[Lcoe]);
+        break;
 
-    stopTest();
+    case 6:
+        problem = QString("%5 %1/%2 + %6 %3/%4")
+        .arg(ops[Lnum]).arg(ops[Lden]).arg(ops[Rnum]).arg(ops[Rden])
+                .arg(ops[Lcoe]).arg(ops[Rcoe]);
+        break;
+
+    default:
+        break;
+    }
+    showProblem(problem);
 }
 
 /*********************************************************************
